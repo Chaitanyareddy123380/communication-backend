@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sentence Repetition</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 40px;
+    }
+
+    .card {
+      background: white;
+      max-width: 500px;
+      margin: auto;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    #sentence {
+      font-size: 20px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    audio {
+      margin-top: 15px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Sentence Repetition</h2>
+
+    <p id="sentence">Click "Get Sentence"</p>
+
+    <button onclick="getSentence()">Get Sentence</button>
+    <button onclick="listenSentence()">Listen</button>
+
+    <br><br>
+
+    <button onclick="startRecording()">Start Recording</button>
+    <button onclick="stopRecording()">Stop Recording</button>
+
+    <audio id="audio" controls></audio>
+  </div>
+
+<script>
+  let sentenceText = "";
+  let mediaRecorder;
+  let audioChunks = [];
+
+  // 🔐 PASTE YOUR FULL LOGIN TOKEN HERE
+  const TOKEN = "PASTE_YOUR_FULL_LOGIN_TOKEN_HERE";
+
+  // 1️⃣ Get sentence from backend
+  function getSentence() {
+    fetch("http://localhost:5000/api/sentence", {
+      headers: {
+        "Authorization": TOKEN
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      sentenceText = data.sentence;
+      document.getElementById("sentence").innerText = sentenceText;
+    })
+    .catch(() => alert("Error fetching sentence"));
+  }
+
+  // 2️⃣ Listen (Text to Speech)
+  function listenSentence() {
+    if (!sentenceText) {
+      alert("Please get a sentence first");
+      return;
+    }
+    const speech = new SpeechSynthesisUtterance(sentenceText);
+    speechSynthesis.speak(speech);
+  }
+
+  // 3️⃣ Start Recording
+  async function startRecording() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = event => {
+      audioChunks.push(event.data);
+    };
+
+    mediaRecorder.start();
+  }
+
+  // 4️⃣ Stop Recording + Upload
+  function stopRecording() {
+    mediaRecorder.stop();
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      document.getElementById("audio").src = audioUrl;
+
+      const formData = new FormData();
+      formData.append("audio", audioBlob);
+
+      try {
+        await fetch("http://localhost:5000/api/audio/upload", {
+          method: "POST",
+          headers: {
+            "Authorization": TOKEN
+          },
+          body: formData
+        });
+
+        alert("Audio saved successfully!");
+      } catch (error) {
+        alert("Audio upload failed");
+      }
+    };
+  }
+</script>
+
+</body>
+</html>

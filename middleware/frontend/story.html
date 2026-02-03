@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Story Retelling</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #eef2f5;
+      padding: 40px;
+    }
+    .card {
+      background: white;
+      max-width: 600px;
+      margin: auto;
+      padding: 25px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 16px;
+    }
+    #storyText {
+      margin: 20px 0;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Story Retelling</h2>
+
+  <h3 id="storyTitle">Click "Get Story"</h3>
+  <p id="storyText"></p>
+
+  <button onclick="getStory()">Get Story</button>
+  <button onclick="listenStory()">Listen Story</button>
+
+  <br><br>
+
+  <button onclick="startRecording()">Start Recording</button>
+  <button onclick="stopRecording()">Stop Recording</button>
+
+  <audio id="audio" controls></audio>
+</div>
+
+<script>
+let storyText = "";
+let mediaRecorder;
+let audioChunks = [];
+
+// 🔐 PASTE YOUR FULL TOKEN HERE
+const TOKEN = "PASTE_YOUR_FULL_LOGIN_TOKEN_HERE";
+
+function getStory() {
+  fetch("http://localhost:5000/api/story", {
+    headers: { "Authorization": TOKEN }
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("storyTitle").innerText = data.title;
+    document.getElementById("storyText").innerText = data.text;
+    storyText = data.text;
+  });
+}
+
+function listenStory() {
+  if (!storyText) {
+    alert("Get a story first");
+    return;
+  }
+  const speech = new SpeechSynthesisUtterance(storyText);
+  speechSynthesis.speak(speech);
+}
+
+async function startRecording() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+  audioChunks = [];
+  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+  mediaRecorder.start();
+}
+
+function stopRecording() {
+  mediaRecorder.stop();
+  mediaRecorder.onstop = async () => {
+    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+    document.getElementById("audio").src =
+      URL.createObjectURL(audioBlob);
+
+    const formData = new FormData();
+    formData.append("audio", audioBlob);
+
+    await fetch("http://localhost:5000/api/audio/upload", {
+      method: "POST",
+      headers: { "Authorization": TOKEN },
+      body: formData
+    });
+
+    alert("Story retelling saved!");
+  };
+}
+</script>
+
+</body>
+</html>
