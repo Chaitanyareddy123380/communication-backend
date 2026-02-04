@@ -14,7 +14,12 @@ const app = express();
 
 // Middleware
 app.use("/uploads", express.static("uploads"));
-app.use(cors());
+app.use(cors({
+  origin: "https://cool-bonbon-0b8bee.netlify.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json());
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/sentence", sentenceRoutes);
