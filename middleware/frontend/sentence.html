@@ -1,140 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Sentence Repetition</title>
-
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 40px;
-    }
-
-    .card {
-      background: white;
-      max-width: 500px;
-      margin: auto;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-    }
-
-    #sentence {
-      font-size: 20px;
-      margin: 20px 0;
-      font-weight: bold;
-    }
-
-    button {
-      padding: 10px 15px;
-      margin: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    audio {
-      margin-top: 15px;
-      width: 100%;
-    }
+    body { font-family: Arial; background:#f4f6f8; padding:40px; }
+    .box { max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px; }
+    button { padding:10px 15px; margin:5px; }
+    #sentence { font-size:18px; margin:15px 0; }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <h2>Sentence Repetition</h2>
+<div class="box">
+  <h2>Sentence Repetition</h2>
 
-    <p id="sentence">Click "Get Sentence"</p>
+  <button onclick="getSentence()">Get Sentence</button>
+  <button onclick="listenSentence()">Listen</button>
 
-    <button onclick="getSentence()">Get Sentence</button>
-    <button onclick="listenSentence()">Listen</button>
+  <p id="sentence">Click "Get Sentence"</p>
 
-    <br><br>
+  <hr>
 
-    <button onclick="startRecording()">Start Recording</button>
-    <button onclick="stopRecording()">Stop Recording</button>
+  <button onclick="startRecording()">Start Recording</button>
+  <button onclick="stopRecording()">Stop Recording</button>
 
-    <audio id="audio" controls></audio>
-  </div>
+  <audio id="audio" controls></audio>
+</div>
 
 <script>
-  let sentenceText = "";
-  let mediaRecorder;
-  let audioChunks = [];
+const API = "https://communication-backend-5pk0.onrender.com";
+let currentSentence = "";
+let recorder;
+let audioChunks = [];
 
-  // 🔐 PASTE YOUR FULL LOGIN TOKEN HERE
-  const TOKEN = "PASTE_YOUR_FULL_LOGIN_TOKEN_HERE";
-
-  // 1️⃣ Get sentence from backend
-  function getSentence() {
-    fetch("https://communication-backend-5pk0.onrender.com/api/auth/login", {
-      headers: {
-        "Authorization": token
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      sentenceText = data.sentence;
-      document.getElementById("sentence").innerText = sentenceText;
-    })
-    .catch(() => alert("Error fetching sentence"));
-  }
-
-  // 2️⃣ Listen (Text to Speech)
-  function listenSentence() {
-    if (!sentenceText) {
-      alert("Please get a sentence first");
-      return;
+/* 1️⃣ Get sentence from backend */
+function getSentence() {
+  fetch(API + "/api/sentence", {
+    headers: {
+      "Authorization": localStorage.getItem("token")
     }
-    const speech = new SpeechSynthesisUtterance(sentenceText);
-    speechSynthesis.speak(speech);
-  }
+  })
+  .then(res => res.json())
+  .then(data => {
+    currentSentence = data.sentence;
+    document.getElementById("sentence").innerText = currentSentence;
+  });
+}
 
-  // 3️⃣ Start Recording
-  async function startRecording() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
+/* 2️⃣ Listen (Text-to-Speech) */
+function listenSentence() {
+  if (!currentSentence) return alert("Get sentence first");
+  const speech = new SpeechSynthesisUtterance(currentSentence);
+  speech.lang = "en-US";
+  window.speechSynthesis.speak(speech);
+}
 
-    mediaRecorder.ondataavailable = event => {
-      audioChunks.push(event.data);
-    };
+/* 3️⃣ Record student voice */
+async function startRecording() {
+  audioChunks = [];
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  recorder = new MediaRecorder(stream);
 
-    mediaRecorder.start();
-  }
+  recorder.ondataavailable = e => audioChunks.push(e.data);
+  recorder.onstop = () => {
+    const audioBlob = new Blob(audioChunks);
+    const audioUrl = URL.createObjectURL(audioBlob);
+    document.getElementById("audio").src = audioUrl;
+  };
 
-  // 4️⃣ Stop Recording + Upload
-  function stopRecording() {
-    mediaRecorder.stop();
+  recorder.start();
+}
 
-    mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      document.getElementById("audio").src = audioUrl;
-
-      const formData = new FormData();
-      formData.append("audio", audioBlob);
-
-      try {
-        await fetch("http://localhost:5000/api/audio/upload", {
-          method: "POST",
-          headers: {
-            "Authorization": TOKEN
-          },
-          body: formData
-        });
-
-        alert("Audio saved successfully!");
-      } catch (error) {
-        alert("Audio upload failed");
-      }
-    };
-  }
+/* 4️⃣ Stop recording */
+function stopRecording() {
+  recorder.stop();
+}
 </script>
 
 </body>
