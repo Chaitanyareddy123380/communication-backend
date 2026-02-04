@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Login</title>
+  <style>
+    body { font-family: Arial; background:#eef2f5; padding:40px; }
+    .box { max-width:400px; margin:auto; background:white; padding:20px; border-radius:10px; }
+    input, button { width:100%; padding:10px; margin:8px 0; }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2>Login</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <p id="msg"></p>
+</div>
+
+<script>
+const API = "https://communication-backend.onrender.com";
+
+function login() {
+  fetch(API + "/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: email.value,
+      password: password.value
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.token) {
+      localStorage.setItem("token", data.token);
+      window.location.href = "sentence.html";
+    } else {
+      msg.innerText = data.message;
+    }
+  });
+}
+</script>
+
+</body>
+</html>
