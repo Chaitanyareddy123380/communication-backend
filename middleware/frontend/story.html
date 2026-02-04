@@ -93,9 +93,9 @@ function stopRecording() {
     const formData = new FormData();
     formData.append("audio", audioBlob);
 
-    await fetch("http://localhost:5000/api/audio/upload", {
+    await fetch("https://communication-backend.onrender.com", {
       method: "POST",
-      headers: { "Authorization": TOKEN },
+      headers: { "Authorization": token },
       body: formData
     });
 

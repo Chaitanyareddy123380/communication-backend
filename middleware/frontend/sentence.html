@@ -72,9 +72,9 @@
 
   // 1️⃣ Get sentence from backend
   function getSentence() {
-    fetch("http://localhost:5000/api/sentence", {
+    fetch("https://communication-backend.onrender.com", {
       headers: {
-        "Authorization": TOKEN
+        "Authorization": token
       }
     })
     .then(response => response.json())
