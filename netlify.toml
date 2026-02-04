@@ -1,0 +1,3 @@
+[build]
+  base = "middleware/frontend"
+  publish = "."
