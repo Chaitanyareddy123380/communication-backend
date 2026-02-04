@@ -34,7 +34,7 @@ function login() {
   .then(data => {
     if (data.token) {
       localStorage.setItem("token", data.token);
-      window.location.href = "/middleware/frontend/sentence.html";
+      window.location.href = "sentence.html";
     } else {
       msg.innerText = data.message;
     }

@@ -93,7 +93,7 @@ function stopRecording() {
     const formData = new FormData();
     formData.append("audio", audioBlob);
 
-    await fetch("https://communication-backend.onrender.com", {
+    await fetch("https://communication-backend-5pk0.onrender.com/api/auth/login", {
       method: "POST",
       headers: { "Authorization": token },
       body: formData
